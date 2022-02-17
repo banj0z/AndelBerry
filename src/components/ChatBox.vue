@@ -1,15 +1,15 @@
 <template>
   <section class="ChatSection">
     <div class="ChatWindow" id="scrollToBottom">
-      <div class="TopFade" v-if="OverFlowIsActive"></div>
-      <ChatMessage v-for="chatMessage in chatMessages"
-        v-bind:key="chatMessage"
+      <div class="TopFade" v-if="this.isScrollActive"></div>
+      <ChatMessage v-for="(chatMessage, index) in chatMessages"
+        v-bind:key="index"
         v-bind:isSelf="chatMessage.isSelf"
         v-bind:author="chatMessage.author"
         v-bind:message="chatMessage.message"/>
     </div>
     <div class="MessageOrchestrator">
-      <input class="InputMessageField" v-model="message" placeholder="message" v-on:keydown.enter="send" type="text" />
+      <input class="InputMessageField" v-model="inputMessage" placeholder="message" v-on:keydown.enter="send" type="text" />
       <input class="SendButton" type="button" value="Send" v-on:click="send"/>
     </div>
   </section>
@@ -23,25 +23,26 @@ export default {
   data () {
     return {
       chatMessages: [],
-      message: ''
+      inputMessage: ''
     }
   },
-  props: [],
+  props: {
+  },
   computed: {
-    OverFlowIsActive () {
-      if(!document.getElementById('scrollToBottom')) return false
+    isScrollActive () {
+      const count = this.chatMessages.count // this is to trigger a computed value update
+      if (count < 1) return false
       const element = document.getElementById('scrollToBottom')
-      const isOverflowOn = element.offsetHeight < element.scrollHeight
-      return isOverflowOn
+      return !!element && element.offsetHeight < element.scrollHeight
     }
   },
   methods: {
     send: function () {
-      this.addChatMessage('Me', this.message, true)
-      this.sendMessage(this.message)
-      this.message = undefined
+      this.addChatMessage('Me', this.inputMessage, true)
+      this.sendMessage(this.inputMessage)
+      this.inputMessage = undefined
     },
-    sendMessage: function (message) {
+    sendMessage: function (messageToSend) {
       const https = require('https')
       const options = {
         host: 'larrymessenger.azurewebsites.net',
@@ -49,11 +50,10 @@ export default {
         path: '/api/larrymessenger',
         method: 'POST'
       }
-      const data = JSON.stringify({author: 'Berry', message: this.message})
+      const data = JSON.stringify({author: 'Berry', message: messageToSend})
 
       const req = https.request(options, res => {
         res.on('data', d => {
-          console.log(d)
           this.addChatMessage('Larry', d.toString())
         })
       })
@@ -65,8 +65,8 @@ export default {
       req.write(data)
       req.end()
     },
-    addChatMessage: function (author, message, isSelf = false) {
-      this.chatMessages = this.chatMessages.concat({author: author, message: message, isSelf: isSelf})
+    addChatMessage: function (author, messageToAdd, isSelf = false) {
+      this.chatMessages = this.chatMessages.concat({author: author, message: messageToAdd, isSelf: isSelf})
       this.scrollToBottom()
     },
     async scrollToBottom () {
@@ -106,7 +106,7 @@ export default {
   position: absolute;
   width:100%;
   max-width: 486px;
-  height:35px;
+  height:45px;
   background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
 }
 .MessageOrchestrator{

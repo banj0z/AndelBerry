@@ -53,6 +53,6 @@ export default {
 .MessageContent{
   display: inline-flex;
   overflow-wrap: anywhere;
-  padding-left: 5px;
+  padding: 5px;
 }
 </style>
